@@ -54,7 +54,7 @@ endingDate="20191231"
 createDestination=true
 moveFiles=false
 
-logit ${scriptLocation}/fairfax-pre-process-grouper.sh \
+${scriptLocation}/fairfax-pre-process-grouper.sh \
     --startingDate="${startingDate}" \
     --endingDate="${endingDate}" \
     --createDestination="${createDestination}" \
@@ -62,6 +62,65 @@ logit ${scriptLocation}/fairfax-pre-process-grouper.sh \
     --sourceFolder="${sourceFolder}" \
     --targetFolder="${targetFolder}" \
     --forReviewFolder="${forReviewFolder}"
+```
+
+### recreate-fairfax-restore-structure.groovy
+
+Recreates the `Fairfax-RESTORE` structure in another directory using sample files. This is to allow testing of the processing of
+Fairfax files without using actual Fairfax files. The `sourceFileListingPath` is a text file containing a listing of all the
+files that are recreated in a different directory structure. There is an expectation that `sourceFileListingPath` has
+`/Fairfax-RESTORE/` in the path. This is the cutoff point in the file path -- the file path after this point is recreated in the
+`destinationFolder`. The sample PDF file is simply copied over for every entry. For ease and speed of processing it's recommended
+that the sample files be as small as possible.
+
+Example usage:
+```
+scriptLocation="/path/to/the/script/location"
+
+sourceFileListingPath="/path/to/source-files"
+destinationFolder="/path/to/destination"
+samplePdfFilePath="/path/to/sample-pdf-file"
+
+${scriptLocation}/recreate-fairfax-restore-structure.groovy \
+    "${sourceFileListingPath}" \
+    "${destinationFolder}" \
+    "${samplePdfFilePath}"
+```
+
+### recreate-files-with-structure.groovy
+
+Recreates files with a directory structure in another directory using sample files. This is to allow testing of the processing
+of that particular structure without using actual Fairfax files (or some other set of files that we don't want to move out of a
+secure space). The `sourceFileListingPath` is a text file containing a listing of all the files that are recreated in a different
+file root, but having the same directory structure. The `sourceFileListingPath` is the cutoff point in the file path. The file path
+after this point is recreated in the `targetFolder`. The sample PDF file, sample `mets.xml`, sample `done` and sample other file
+are simply copied over for every matching entry. For ease and speed of processing it's recommended that the sample files be as
+small as possible.
+
+Example usage:
+```
+scriptLocation="/path/to/the/script/location"
+
+sourceFileListingPath="/path/to/source-files"
+targetFolder="/path/to/destination"
+# the file structure after the cutoff is recreated in the destination folder
+sourceFileFilenameCutoff="/LD/Fairfax/"
+# PDF files have a filename suffix of '.pdf'
+samplePdfFilePath="/path/to/sample-pdf-file"
+# The mets file has a filename of 'mets.xml'
+sampleMetsFilePath="/path/to/sample/mets.xml"
+# The done file has a filename of 'done'
+sampleDoneFilePath="/path/to/sample/done"
+sampleOtherFilePath="/path/to/any-other-file-substitute"
+
+${scriptLocation}/recreate-files-with-structure.groovy \
+    "${sourceFileListingPath}" \
+    "${targetFolder}" \
+    "${sourceFileFilenameCutoff}" \
+    "${samplePdfFilePath}" \
+    "${sampleMetsFilePath}" \
+    "${sampleDoneFilePath}" \
+    "${sampleOtherFilePath}"
 ```
 
 ## Tests
