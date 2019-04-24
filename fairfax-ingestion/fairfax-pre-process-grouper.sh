@@ -74,13 +74,52 @@ done
 
 UNACCEPTABLE_PARAMETERS=false
 
+yearValue=
+monthValue=
+dayValue=
+regexForDate="(\d{4})(\d{2})(\d{2})"
+
+function get_year_month_day() {
+    dateToParse="$1"
+
+    #if [[ "${isSunOS}" == "true" ]]; then
+    if [[ ${dateToParse} =~ ${regexForDate} ]]; then
+            yearValue="${BASH_REMATCH[1]}"
+            monthValue="${BASH_REMATCH[2]}"
+            dayValue="${BASH_REMATCH[3]}"
+    else
+        echo "WARNING: Unable to parse dateToParse=${dateToParse} with regexForDate=${regexForDate}"
+        yearValue="UNKNOWN"
+        monthValue="UNKNOWN"
+        dayValue="UNKNOWN"
+        echo "Setting yearValue=${yearValue}, monthValue=${monthValue}, dayValue=${dayValue}"
+    fi
+    #else
+    #    yearValue=`date -d "${dateToParse}" +"%Y"`
+    #    monthValue=`date -d "${dateToParse}" +"%m"`
+    #    dayValue=`date -d "${dateToParse}" +"%d"`
+    #fi
+}
+
+function add_1_day() {
+    dateToAdd="$1"
+
+    get_year_month_day "${dateToAdd}"
+    theYear="${yearValue}"
+    theMonth="${monthValue}"
+    theDay="${dayValue}"
+
+
+}
+
 # Check variables
 if [ -n "$startingDate" ]; then
     echo "startingDate=${startingDate}"
     if date -d "$startingDate"; then
-        startingYear=`date -d "${startingDate}" +"%Y"`
-        startingMonth=`date -d "${startingDate}" +"%m"`
-        startingDay=`date -d "${startingDate}" +"%d"`
+        get_year_month_day "${startingDate}"
+        startingYear=yearValue
+        startingMonth=monthValue
+        startingDay=dayValue
         echo -e "\tstartingYear=${startingYear}, startingMonth=${startingMonth}, startingDay=${startingDay}"
      else
         UNACCEPTABLE_PARAMETERS=true
@@ -95,9 +134,10 @@ echo ""
 if [ -n "$endingDate" ]; then
     echo "endingDate=${endingDate}"
     if date -d "$endingDate"; then
-        endingYear=`date -d "${endingDate}" +"%Y"`
-        endingMonth=`date -d "${endingDate}" +"%m"`
-        endingDay=`date -d "${endingDate}" +"%d"`
+        get_year_month_day "${endingDate}"
+        endingYear=yearValue
+        endingMonth=monthValue
+        endingDay=dayValue
         echo -e "\tendingYear=${endingYear}, endingMonth=${endingMonth}, endingDay=${endingDay}"
      else
         UNACCEPTABLE_PARAMETERS=true
@@ -209,6 +249,14 @@ if [[ "$UNACCEPTABLE_PARAMETERS" == "true" ]]; then
     exit 1
 fi
 
+operatingSystem=`uname`
+if [[ "${operationgSystem}" =~ .*SunOs.* ]]; then
+    isSunOS="true"
+else
+    isSunOs="false"
+fi
+echo "isSunOS=${isSunOS}"
+
 echo ""
 echo ""
 currentTime=`date +"%Y-%m-%d %H:%M:%S"`
@@ -246,11 +294,19 @@ function are_files_the_same() {
     firstFilePath="$1"
     secondFilePath="$2"
 
-    md5FirstFilePathArray=($(md5sum "${firstFilePath}"))
-    md5FirstFilePath=${md5FirstFilePathArray[0]}
+    if [[ "${isSunOS}" == "true" ]]; then
+        md5FirstFilePathArray=($(digest -a md5 -v "${firstFilePath}"))
+        md5FirstFilePath=${md5FirstFilePathArray[3]}
 
-    md5SecondFilePathArray=($(md5sum "${secondFilePath}"))
-    md5SecondFilePath=${md5SecondFilePathArray[0]}
+        md5SecondFilePathArray=($(digest -a md5 -v "${secondFilePath}"))
+        md5SecondFilePath=${md5SecondFilePathArray[3]}
+    else
+        md5FirstFilePathArray=($(md5sum "${firstFilePath}"))
+        md5FirstFilePath=${md5FirstFilePathArray[0]}
+
+        md5SecondFilePathArray=($(md5sum "${secondFilePath}"))
+        md5SecondFilePath=${md5SecondFilePathArray[0]}
+    fi
 
     if [[ "${verbose}" == "true" ]]; then
         echo "$firstFilePath} md5=${md5FirstFilePath}, ${secondFilePath} md5=${md5SecondFilePath}"
@@ -294,9 +350,10 @@ function non_duplicate_filename() {
 
 function process_for_date() {
     processingDate=$1
-    currentYear=`date -d "${processingDate}" +"%Y"`
-    currentMonth=`date -d "${processingDate}" +"%m"`
-    currentDay=`date -d "${processingDate}" +"%d"`
+    get_year_month_day "${processingDate}"
+    currentYear=yearValue
+    currentMonth=monthValue
+    currentDay=dayValue
 
     currentProcessingSet=("${unprocessedSortedCompleteFilesList[@]}")
     unprocessedSortedCompleteFilesList=()
@@ -352,6 +409,7 @@ function process_via_start_date_to_end_date() {
     currentDate=${startingDate}
     while (( ${currentDate} <= ${endingDate} )); do
             process_for_date $currentDate
+
 
             currentDate=`date -d "${currentDate}+1day" +"%Y%m%d"`
     done
