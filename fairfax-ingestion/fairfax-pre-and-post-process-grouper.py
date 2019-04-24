@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# SunOS:
+#!/usr/bin/python2.7
 
 # fairfax-pre-and-post-process-grouper.py
 # Group source files by date and titleCode.
@@ -195,7 +197,7 @@ def process_parameters(parsed_arguments):
 
     print("")
 
-    if verbose:
+    if verbose and not is_sun_os:
         move_or_copy_flags = "-v"
     else:
         move_or_copy_flags = ""
@@ -350,10 +352,15 @@ def move_or_copy(source_file_path, target_file_or_folder):
     command_list = []
     if move_files:
         command_list.append("mv")
-        command_list.append("-n")
+        if not is_sun_os:
+            # SunOS 5.10 does not have a noclobber option for move
+            command_list.append("-n")
     else:
         command_list.append("cp")
-        command_list.append("-a")
+        if is_sun_os:
+            command_list.append("-p")
+        else:
+            command_list.append("-a")
     if len(move_or_copy_flags) > 0:
         command_list.append(move_or_copy_flags)
 
