@@ -97,18 +97,18 @@ class FairfaxFile:
 
     def show_values(self):
         print("FairfaxFile, file_name=" + self.file_name)
-        print("\tdirname=" + self.dirname)
-        print("\tis_fairfax_pdf_file=" + str(self.is_fairfax_pdf_file))
-        print("\tis_done_file=" + str(self.is_done_file))
-        print("\tis_mets_xml_file=" + str(self.is_mets_xml_file))
-        print("\tis_other_file=" + str(self.is_other_file))
+        print("    dirname=" + self.dirname)
+        print("    is_fairfax_pdf_file=" + str(self.is_fairfax_pdf_file))
+        print("    is_done_file=" + str(self.is_done_file))
+        print("    is_mets_xml_file=" + str(self.is_mets_xml_file))
+        print("    is_other_file=" + str(self.is_other_file))
         if self.is_fairfax_pdf_file:
-            print("\ttitle_code=" + self.title_code)
-            print("\tedition_code=" + self.edition_code)
-            print("\tfile_date=" + self.file_date.strftime(DATE_DISPLAY_FORMAT) +
+            print("    title_code=" + self.title_code)
+            print("    edition_code=" + self.edition_code)
+            print("    file_date=" + self.file_date.strftime(DATE_DISPLAY_FORMAT) +
                   ", file_date_string=" + self.file_date_string)
-            print("\tqualifier=" + self.qualifier)
-            print("\textension=" + self.extension)
+            print("    qualifier=" + self.qualifier)
+            print("    extension=" + self.extension)
 
 
 def convert_string_to_date(date_string):
@@ -182,18 +182,37 @@ def make_directory_path(directory_path):
 def display_parameter_values():
     print("")
     print("Parameters as set:")
-    print("\tsource_folder=" + source_folder)
-    print("\ttarget_pre_process_folder=" + target_pre_process_folder)
-    print("\ttarget_post_process_folder=" + target_post_process_folder)
-    print("\tfor_review_folder=" + for_review_folder)
-    print("\tstarting_date=" + starting_date.strftime(DATE_DISPLAY_FORMAT))
-    print("\tending_date=" + ending_date.strftime(DATE_DISPLAY_FORMAT))
-    print("\tdo_pre_processing=" + str(do_pre_processing))
-    print("\tdo_post_processing=" + str(do_post_processing))
-    print("\tcreate_targets=" + str(create_targets))
-    print("\tmove_files=" + str(move_files))
-    print("\tverbose=" + str(verbose))
-    print("\ttest=" + str(test))
+    print("    source_folder=" + source_folder)
+    print("    target_pre_process_folder=" + target_pre_process_folder)
+    print("    target_post_process_folder=" + target_post_process_folder)
+    print("    for_review_folder=" + for_review_folder)
+    print("    starting_date=" + starting_date.strftime(DATE_DISPLAY_FORMAT))
+    print("    ending_date=" + ending_date.strftime(DATE_DISPLAY_FORMAT))
+    print("    do_pre_processing=" + str(do_pre_processing))
+    print("    do_post_processing=" + str(do_post_processing))
+    print("    create_targets=" + str(create_targets))
+    print("    move_files=" + str(move_files))
+    print("    verbose=" + str(verbose))
+    print("    test=" + str(test))
+    print("")
+
+
+def display_processing_legend():
+    print("")
+    print("Processing legend:")
+    print("    .  -- indicates a file has been processed (either moved or copied)")
+    print("    :  -- indicates a folder has been processed (either moved or copied)")
+    print("    +  -- indicates a duplicate file has been detected and is exactly the same as the target file.")
+    print("          If --move-files has been specified the source file is deleted.")
+    print("    #  -- indicates a duplicate folder has been detected and will be copied or moved with the name of the")
+    print("          folder with a '-<number>' appended to it.")
+    print("    *  -- indicates that a pre-process file already exists (and is the same) in the post-processing")
+    print("          target directory. In this case, the file is either not processed (if a copy) or deleted in the")
+    print("          source folder (if --move_files).")
+    print("    -  -- indicates that a source file has been deleted. This can happen when:")
+    print("              - When pre-processing and the file already exists and --move_files is specified.")
+    print("    =  -- indicates that a source folder has been deleted. This can happen when:")
+    print("              - When post-processing and --move_files, the parent folder of the 'done' file deleted.")
     print("")
 
 
@@ -230,7 +249,7 @@ def process_parameters(parsed_arguments):
 
     if starting_date > ending_date:
         print("")
-        print("\tERROR starting_date=" + starting_date.strftime(DATE_DISPLAY_FORMAT) +
+        print("    ERROR starting_date=" + starting_date.strftime(DATE_DISPLAY_FORMAT) +
               " must be BEFORE ending_date=" + ending_date.strftime(DATE_DISPLAY_FORMAT))
         unacceptable_parameters = True
 
@@ -242,54 +261,54 @@ def process_parameters(parsed_arguments):
         move_or_copy_flags = ""
 
     if is_directory(source_folder):
-        print("\tsource_folder=" + source_folder + " exists and is directory, processing can take place.")
+        print("    source_folder=" + source_folder + " exists and is directory, processing can take place.")
     else:
-        print("\tERROR source_folder=" + source_folder + " does not exist or is not a directory. It must exist!")
+        print("    ERROR source_folder=" + source_folder + " does not exist or is not a directory. It must exist!")
         unacceptable_parameters = True
 
     print("")
 
     if is_directory(target_pre_process_folder):
-        print("\ttarget_pre_process_folder=" + target_pre_process_folder + " exists and is directory.")
+        print("    target_pre_process_folder=" + target_pre_process_folder + " exists and is directory.")
     else:
         if create_targets:
-            print("\tCreating " + target_pre_process_folder)
+            print("    Creating " + target_pre_process_folder)
             make_directory_path(target_pre_process_folder)
         else:
-            print("\tERROR createTargets=" + create_targets + ", therefore target_pre_process_folder=" +
+            print("    ERROR createTargets=" + create_targets + ", therefore target_pre_process_folder=" +
                   target_pre_process_folder + " must exist!")
             unacceptable_parameters = True
 
     print("")
 
     if is_directory(target_post_process_folder):
-        print("\ttarget_post_process_folder=" + target_post_process_folder + " exists and is directory.")
+        print("    target_post_process_folder=" + target_post_process_folder + " exists and is directory.")
     else:
         if create_targets:
-            print("\tCreating " + target_post_process_folder)
+            print("    Creating " + target_post_process_folder)
             make_directory_path(target_post_process_folder)
         else:
-            print("\tERROR createTargets=" + create_targets + ", therefore target_post_process_folder=" +
+            print("    ERROR createTargets=" + create_targets + ", therefore target_post_process_folder=" +
                   target_post_process_folder + " must exist!")
             unacceptable_parameters = True
 
     print("")
 
     if is_directory(for_review_folder):
-        print("\tfor_review_folder=" + for_review_folder + " exists and is directory.")
+        print("    for_review_folder=" + for_review_folder + " exists and is directory.")
     else:
         if create_targets:
-            print("\tCreating " + for_review_folder)
+            print("    Creating " + for_review_folder)
             make_directory_path(for_review_folder)
         else:
-            print("\tERROR createTargets=" + create_targets + ", therefore for_review_folder=" +
+            print("    ERROR createTargets=" + create_targets + ", therefore for_review_folder=" +
                   for_review_folder + " must exist!")
             unacceptable_parameters = True
 
     print("")
 
     if (not do_pre_processing and not do_post_processing) or (do_pre_processing and do_post_processing):
-        print("\tOnly ONE of do_pre_processing=" + str(do_pre_processing) + "and do_post_processing=" +
+        print("    Only ONE of do_pre_processing=" + str(do_pre_processing) + "and do_post_processing=" +
               str(do_post_processing) + " MUST be set.")
         unacceptable_parameters = True
 
@@ -433,6 +452,30 @@ def move_or_copy(source_file_path, target_file_or_folder):
         print(output)
 
 
+def delete_file(file_to_delete):
+    if is_file(file_to_delete):
+        command_list = ["rm", file_to_delete]
+        output = subprocess.check_output(command_list)
+        sys.stdout.write('-')
+        sys.stdout.flush()
+        if verbose:
+            print(output)
+    else:
+        print("WARNING: Not deleting, not a file=" + file_to_delete)
+
+
+def delete_folder(folder_to_delete):
+    if is_directory(folder_to_delete):
+        command_list = ["rm", "-rf", folder_to_delete]
+        output = subprocess.check_output(command_list)
+        sys.stdout.write('=')
+        sys.stdout.flush()
+        if verbose:
+            print(output)
+    else:
+        print("WARNING: Not deleting, not a directory=" + folder_to_delete)
+
+
 # file structure for post-processing is the following:
 # <newspapers|magazines>/<title_code>/<year>/<file_date_string>/
 #                                                       |- done
@@ -488,13 +531,16 @@ def post_process_for_given_done_file(fairfax_file, post_processing_folder):
         if is_file_or_directory(target_folder):
             # TODO it already exists, make duplicate
             target_folder = non_duplicate_directory(target_folder)
-            sys.stdout.write('+')
+            sys.stdout.write('#')
             sys.stdout.flush()
 
         make_directory_path(target_folder)
         move_or_copy(done_source, target_folder)
-        sys.stdout.write('.')
+        sys.stdout.write(':')
         sys.stdout.flush()
+        # The parent folder should now contain no files if a move took place
+        if move_files:
+            delete_folder(fairfax_file.dirname)
 
 
 def post_process_via_going_through_all_done_files(all_done_files):
@@ -508,6 +554,7 @@ def post_process_via_going_through_all_done_files(all_done_files):
             print("")
             timestamp_message("Processing 'done' files, status: " + str(current_file_count) + "/" + str(total_files))
 
+    print("")
     timestamp_message("Processing completed for 'done' files, status: " + str(current_file_count) + "/" + str(total_files))
 
 
@@ -527,6 +574,8 @@ def pre_process_for_given_file(fairfax_file, pre_processing_folder, post_process
                 else:
                     sys.stdout.write('*')
                     sys.stdout.flush()
+                if move_files:
+                    delete_file(fairfax_file.full_path)
             else:
                 target_file_name = fairfax_file.file_name
                 target_folder_for_file = pre_processing_folder + "/" + fairfax_file.file_date_string + "/" + title_code
@@ -546,6 +595,8 @@ def pre_process_for_given_file(fairfax_file, pre_processing_folder, post_process
                         else:
                             sys.stdout.write('+')
                             sys.stdout.flush()
+                        if move_files:
+                            delete_file(fairfax_file.full_path)
                     else:
                         process_file = True
                         target_file_name = non_duplicate_filename(candidate_target_name)
@@ -589,6 +640,7 @@ def pre_process_via_going_through_all_files(all_files):
             print("")
             timestamp_message("Processing status: " + str(current_file_count) + "/" + str(total_files))
 
+    print("")
     timestamp_message("Processing completed: " + str(current_file_count) + "/" + str(total_files))
 
 
@@ -623,6 +675,8 @@ def main():
     determine_if_sun_os()
     parsed_arguments = parse_parameters()
     process_parameters(parsed_arguments)
+
+    display_processing_legend()
 
     timestamp_message("STARTED")
 
