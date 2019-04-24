@@ -108,14 +108,16 @@ def parse_parameters():
         help='The starting-date, format is yyyyMMdd')
     parser.add_argument('--ending_date', type=convert_string_to_date, default=datetime.date(2019, 06, 30),
         help='The ending date, format is yyyyMMdd')
-    parser.add_argument('--create_targets', type=bool, default=True,
+    parser.add_argument('--create_targets', dest='create_targets', action='store_true',
         help='Indicates that the target folders will be created if they do not already exist')
-    parser.add_argument('--move_files', type=bool, default=False,
+    parser.add_argument('--move_files', dest='move_files', action='store_true',
         help='Indicates that files will be moved to the target folder instead of copied')
-    parser.add_argument('--verbose', type=bool, default=False,
+    parser.add_argument('--verbose', dest='verbose', action='store_true',
         help='Indicates that operations will be done in a verbose manner')
-    parser.add_argument('--test', type=bool, default=False,
+    parser.add_argument('--test', dest='test', action='store_true',
         help='Indicates that only tests will be run')
+
+    parser.set_defaults(create_targets=False, move_files=False, verbose=False, test=False)
 
     args = parser.parse_args()
 
