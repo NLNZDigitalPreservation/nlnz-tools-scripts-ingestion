@@ -58,6 +58,8 @@ FAIRFAX_PDF_FILE_FULL_REGEX_PATTERN = "(?<titleCode>[a-zA-Z0-9]{3,4})(?<editionC
                                       "-(?<date>\\d{8})-(?<sequenceLetter>[A-Za-z]{0,2})(?<sequenceNumber>\\d{1,4})" +\
                                       "(?<qualifier>.*?)\\.[pP]{1}[dD]{1}[fF]{1}"
 
+EXISTS_IN_POST_PROCESSING_BUT_NOT_THE_SAME_FILE_FOLDER_NAME = "EXISTS-IN-POST-PROCESSING-BUT-NOT-THE-SAME-FILE"
+
 print("Python version: " + platform.python_version() + ", complete: " + str(sys.version_info))
 
 
@@ -114,6 +116,14 @@ class FairfaxFile:
                   ", file_date_string=" + self.file_date_string)
             print("    qualifier=" + self.qualifier)
             print("    extension=" + self.extension)
+
+
+class FileComparison:
+    def __init__(self, source_file, target_file, is_target_a_file, are_files_the_same):
+        self.source_file = source_file
+        self.target_file = target_file
+        self.is_target_a_file = is_target_a_file
+        self.are_files_the_same = are_files_the_same
 
 
 def convert_string_to_date(date_string):
@@ -217,6 +227,8 @@ def display_processing_legend():
     print("    *  -- indicates that a pre-process file already exists (and is the same) in the post-processing")
     print("          target directory. In this case, the file is either not processed (if a copy) or deleted in the")
     print("          source folder (if --move_files).")
+    print("    ?  -- indicates that a pre-process file already exists (and is NOT the same) in the post-processing")
+    print("          target directory. In this case, the file is either copied or moved to the for_review_folder")
     print("    -  -- indicates that a source file has been deleted. This can happen when:")
     print("              - When pre-processing and the file already exists and --move_files is specified.")
     print("    =  -- indicates that a source folder has been deleted. This can happen when:")
@@ -490,7 +502,8 @@ def delete_file(file_to_delete):
         if verbose:
             print(output)
     else:
-        print("WARNING: Not deleting, not a file=" + file_to_delete)
+        print("")
+        timestamp_message("WARNING: Not deleting, not a file=" + file_to_delete)
 
 
 def delete_folder(folder_to_delete):
@@ -502,7 +515,8 @@ def delete_folder(folder_to_delete):
         if verbose:
             print(output)
     else:
-        print("WARNING: Not deleting, not a directory=" + folder_to_delete)
+        print("")
+        timestamp_message("WARNING: Not deleting, not a directory=" + folder_to_delete)
 
 
 # file structure for post-processing is the following:
@@ -516,15 +530,32 @@ def file_exists_post_processing(fairfax_file, post_processing_folder):
     target_file_post_type = fairfax_file.title_code + "/" + str(fairfax_file.file_date.year) + "/" +\
                        fairfax_file.file_date_string + "/content/streams/" + fairfax_file.file_name
     target_file_path_newspapers = "" + post_processing_folder + "/newspapers/" + target_file_post_type
-    file_exists = is_file(target_file_path_newspapers) and \
-                  are_files_the_same(fairfax_file.full_path, target_file_path_newspapers)
-    if file_exists:
-        return file_exists
 
-    target_file_path_magazines = "" + post_processing_folder + "/magazines/" + target_file_post_type
+    post_processing_file_exists = is_file(target_file_path_newspapers)
+    if post_processing_file_exists:
+        same_file = are_files_the_same(fairfax_file.full_path, target_file_path_newspapers)
+        file_comparison = FileComparison(fairfax_file.full_path, target_file_path_newspapers,
+                                         post_processing_file_exists, same_file)
+    else:
+        target_file_path_magazines = "" + post_processing_folder + "/magazines/" + target_file_post_type
+        post_processing_file_exists = is_file(target_file_path_magazines)
+        if post_processing_file_exists:
+            same_file = are_files_the_same(fairfax_file.full_path, target_file_path_magazines)
+            file_comparison = FileComparison(fairfax_file.full_path, target_file_path_magazines,
+                                             post_processing_file_exists, same_file)
+        else:
+            file_comparison = FileComparison(fairfax_file.full_path, None, False, False)
 
-    return is_file(target_file_path_magazines) and \
-           are_files_the_same(fairfax_file.full_path, target_file_path_magazines)
+    # TODO What if it's the same-named file BUT NOT the same md5 hash? What do we do then?
+    # Actually, we are probably better off assuming that if the same-named file is processed then
+    # it won't be processed again, no matter if it's the same file or not.
+    if file_comparison.is_target_a_file and not file_comparison.are_files_the_same:
+        print("")
+        timestamp_message("WARNING: same named files in source and post-processing are NOT the same:")
+        timestamp_message("    source file=" + file_comparison.source_file)
+        timestamp_message("    post-processing file=" + file_comparison.target_file)
+
+    return file_comparison
 
 
 # file structure for post-processing is the following:
@@ -595,15 +626,31 @@ def pre_process_for_given_pdf_file(fairfax_file, pre_processing_folder, post_pro
 
     process_file = False
     if starting_date <= file_date <= ending_date:
-        if file_exists_post_processing(fairfax_file, post_processing_folder):
+        file_comparison = file_exists_post_processing(fairfax_file, post_processing_folder)
+        if file_comparison.are_files_the_same:
             process_file = False
             if verbose:
+                print("")
                 print("File exists post-processing, file=" + fairfax_file.full_path)
             else:
                 sys.stdout.write('*')
                 sys.stdout.flush()
             if move_files:
                 delete_file(fairfax_file.full_path)
+        elif file_comparison.is_target_a_file and not file_comparison.are_files_the_same:
+            # We have a situation where the source and target files have the same name BUT they aren't the same file
+            # The warning message has already been printed by file_exists_post_processing
+            # We want to either copy or move the file to for-review
+            process_file = False
+            if verbose:
+                print("")
+                print("File exists post-processing but not the same file, copying/moving to for_review_folder, file="
+                      + fairfax_file.full_path)
+            else:
+                sys.stdout.write('?')
+                sys.stdout.flush()
+            move_or_copy(fairfax_file.full_path, for_review_folder + "/" +
+                         EXISTS_IN_POST_PROCESSING_BUT_NOT_THE_SAME_FILE_FOLDER_NAME)
         else:
             target_file_name = fairfax_file.file_name
             target_folder_for_file = pre_processing_folder + "/" + fairfax_file.file_date_string + "/" + title_code
@@ -619,6 +666,7 @@ def pre_process_for_given_pdf_file(fairfax_file, pre_processing_folder, post_pro
                 if are_files_the_same(fairfax_file.full_path, candidate_target_name):
                     process_file = False
                     if verbose:
+                        print("")
                         print("File already exists and same (no overwrite), file=" + fairfax_file.full_path)
                     else:
                         sys.stdout.write('+')
@@ -629,7 +677,8 @@ def pre_process_for_given_pdf_file(fairfax_file, pre_processing_folder, post_pro
                     process_file = True
                     target_file_name = non_duplicate_filename(candidate_target_name)
                     print("")
-                    print("WARNING Duplicate file=" + candidate_target_name + " renamed to=" + target_file_name)
+                    timestamp_message("WARNING Duplicate file=" + candidate_target_name + " renamed to=" +
+                                      target_file_name)
             else:
                 process_file = True
     else:
@@ -679,6 +728,9 @@ def pre_process_via_going_through_all_files(all_files):
     make_directory_path(unprocessed_mets_folder)
     unprocessed_other_folder = for_review_folder + "/UNPROCESSED/OTHER"
     make_directory_path(unprocessed_other_folder)
+    exists_in_post_but_not_same_file_folder_name = for_review_folder + "/" +\
+                                                   EXISTS_IN_POST_PROCESSING_BUT_NOT_THE_SAME_FILE_FOLDER_NAME
+    make_directory_path(exists_in_post_but_not_same_file_folder_name)
 
     current_file_count = 0
     total_files = len(all_files)
