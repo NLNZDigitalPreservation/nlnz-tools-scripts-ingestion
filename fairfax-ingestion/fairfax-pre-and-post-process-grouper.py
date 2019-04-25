@@ -39,6 +39,11 @@ DATE_PARSE_FORMAT = "%Y%m%d"
 DATE_DISPLAY_FORMAT = "%Y-%m-%d"
 DATE_TIME_DISPLAY_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+FILENAME_UNSAFE_CHARACTERS = " *$"
+REPLACEMENT_FILENAME_SAFE_CHARACTER = "-"
+FILE_PATH_SEPARATORS = "/\\"
+REPLACEMENT_FILE_PATH_SEPARATOR = "_"
+
 PDF_FILENAME_REGEX_PATTERN = "(.*)(\\.pdf)"
 PDF_FILENAME_REGEX = re.compile(PDF_FILENAME_REGEX_PATTERN)
 
@@ -336,6 +341,18 @@ def timestamp_message(message_string):
     sys.stdout.flush()
 
 
+def convert_to_filename(file_path_string):
+    safe_filename = file_path_string
+    if safe_filename.startswith("/"):
+        safe_filename = safe_filename[1:]
+    for file_path_separator_character in FILE_PATH_SEPARATORS:
+        safe_filename = safe_filename.replace(file_path_separator_character, REPLACEMENT_FILE_PATH_SEPARATOR)
+    for unsafe_character in FILENAME_UNSAFE_CHARACTERS:
+        safe_filename = safe_filename.replace(unsafe_character, REPLACEMENT_FILENAME_SAFE_CHARACTER)
+
+    return safe_filename
+
+
 def get_all_suffixed_files(root_directory_path, suffix):
     all_files = []
     timestamp_message("finding all files with case-insensitive suffix='" + suffix + "' on path=" + root_directory_path)
@@ -496,8 +513,8 @@ def delete_folder(folder_to_delete):
 #                                                               |- streams/
 #                                                                       |- <file_name>
 def file_exists_post_processing(fairfax_file, post_processing_folder):
-    target_file_post_type = fairfax_file.title_code + "/" + fairfax_file.file_date.year + "/" +\
-                       fairfax_file.file_date_string + "content/streams/" + fairfax_file.file_name
+    target_file_post_type = fairfax_file.title_code + "/" + str(fairfax_file.file_date.year) + "/" +\
+                       fairfax_file.file_date_string + "/content/streams/" + fairfax_file.file_name
     target_file_path_newspapers = "" + post_processing_folder + "/newspapers/" + target_file_post_type
     file_exists = is_file(target_file_path_newspapers) and \
                   are_files_the_same(fairfax_file.full_path, target_file_path_newspapers)
@@ -570,82 +587,108 @@ def post_process_via_going_through_all_done_files(all_done_files):
     timestamp_message("Processing completed for 'done' files, status: " + str(current_file_count) + "/" + str(total_files))
 
 
-def pre_process_for_given_file(fairfax_file, pre_processing_folder, post_processing_folder, unprocessed_folder):
-    if fairfax_file.is_fairfax_pdf_file:
-        title_code = fairfax_file.title_code
-        file_date = fairfax_file.file_date
-        if verbose:
-            fairfax_file.show_values()
+def pre_process_for_given_pdf_file(fairfax_file, pre_processing_folder, post_processing_folder):
+    title_code = fairfax_file.title_code
+    file_date = fairfax_file.file_date
+    if verbose:
+        fairfax_file.show_values()
 
-        process_file = False
-        if starting_date <= file_date <= ending_date:
-            if file_exists_post_processing(fairfax_file, post_processing_folder):
-                process_file = False
-                if verbose:
-                    print("File exists post-processing, file=" + fairfax_file.full_path)
-                else:
-                    sys.stdout.write('*')
-                    sys.stdout.flush()
-                if move_files:
-                    delete_file(fairfax_file.full_path)
+    process_file = False
+    if starting_date <= file_date <= ending_date:
+        if file_exists_post_processing(fairfax_file, post_processing_folder):
+            process_file = False
+            if verbose:
+                print("File exists post-processing, file=" + fairfax_file.full_path)
             else:
-                target_file_name = fairfax_file.file_name
-                target_folder_for_file = pre_processing_folder + "/" + fairfax_file.file_date_string + "/" + title_code
-                if verbose:
-                    print("target_folder_for_file=" + target_folder_for_file)
-                if verbose:
-                    print(starting_date.strftime(DATE_DISPLAY_FORMAT) + " <= " +
-                          file_date.strftime(DATE_DISPLAY_FORMAT) + " < =" + ending_date.strftime(DATE_DISPLAY_FORMAT))
-                make_directory_path(target_folder_for_file)
-                candidate_target_name = target_folder_for_file + "/" + target_file_name
-                target_file_name = candidate_target_name
-                if is_file_or_directory(candidate_target_name):
-                    if are_files_the_same(fairfax_file.full_path, candidate_target_name):
-                        process_file = False
-                        if verbose:
-                            print("File already exists and same (no overwrite), file=" + fairfax_file.full_path)
-                        else:
-                            sys.stdout.write('+')
-                            sys.stdout.flush()
-                        if move_files:
-                            delete_file(fairfax_file.full_path)
+                sys.stdout.write('*')
+                sys.stdout.flush()
+            if move_files:
+                delete_file(fairfax_file.full_path)
+        else:
+            target_file_name = fairfax_file.file_name
+            target_folder_for_file = pre_processing_folder + "/" + fairfax_file.file_date_string + "/" + title_code
+            if verbose:
+                print("target_folder_for_file=" + target_folder_for_file)
+            if verbose:
+                print(starting_date.strftime(DATE_DISPLAY_FORMAT) + " <= " +
+                      file_date.strftime(DATE_DISPLAY_FORMAT) + " < =" + ending_date.strftime(DATE_DISPLAY_FORMAT))
+            make_directory_path(target_folder_for_file)
+            candidate_target_name = target_folder_for_file + "/" + target_file_name
+            target_file_name = candidate_target_name
+            if is_file_or_directory(candidate_target_name):
+                if are_files_the_same(fairfax_file.full_path, candidate_target_name):
+                    process_file = False
+                    if verbose:
+                        print("File already exists and same (no overwrite), file=" + fairfax_file.full_path)
                     else:
-                        process_file = True
-                        target_file_name = non_duplicate_filename(candidate_target_name)
-                        print("")
-                        print("WARNING Duplicate file=" + candidate_target_name + " renamed to=" + target_file_name)
+                        sys.stdout.write('+')
+                        sys.stdout.flush()
+                    if move_files:
+                        delete_file(fairfax_file.full_path)
                 else:
                     process_file = True
-        else:
-            if verbose:
-                print(starting_date.strftime(DATE_DISPLAY_FORMAT) + " not <= " +
-                      file_date.strftime(DATE_DISPLAY_FORMAT) + " not < =" + ending_date.strftime(DATE_DISPLAY_FORMAT))
-
-        if process_file:
-            if candidate_target_name == target_file_name:
-                actual_target = target_folder_for_file
+                    target_file_name = non_duplicate_filename(candidate_target_name)
+                    print("")
+                    print("WARNING Duplicate file=" + candidate_target_name + " renamed to=" + target_file_name)
             else:
-                actual_target = target_file_name
-            if verbose:
-                print("Processing file=" + fairfax_file.full_path)
-            else:
-                sys.stdout.write('.')
-                sys.stdout.flush()
-            move_or_copy(fairfax_file.full_path, actual_target)
+                process_file = True
     else:
-        # TODO There's no file structure associated with for_review, although when moving processed files, they are
-        #      part of an existing folder structure
-        move_or_copy(fairfax_file.full_path, unprocessed_folder)
+        if verbose:
+            print(starting_date.strftime(DATE_DISPLAY_FORMAT) + " not <= " +
+                  file_date.strftime(DATE_DISPLAY_FORMAT) + " not < =" + ending_date.strftime(DATE_DISPLAY_FORMAT))
+
+    if process_file:
+        if candidate_target_name == target_file_name:
+            actual_target = target_folder_for_file
+        else:
+            actual_target = target_file_name
+        if verbose:
+            print("Processing file=" + fairfax_file.full_path)
+        else:
+            sys.stdout.write('.')
+            sys.stdout.flush()
+        move_or_copy(fairfax_file.full_path, actual_target)
+
+
+def pre_process_for_unprocessed_mets_xml_file(fairfax_file, unprocessed_mets_folder):
+    # This is an unprocessed mets.xml file, which means that it wasn't ingested for some reason.
+    # We assume that the pdfs associated with this file have already been pre-processed but we do want to capture
+    # what the title_code and date that are associated with the file itself before we move/copy it to the
+    # unprocessed_mets_folder (also because it makes the file unique)
+    target_filename_prefix = fairfax_file.dirname.replace(source_folder, "")
+    target_filename = convert_to_filename(target_filename_prefix) + "_" + fairfax_file.file_name
+    move_or_copy(fairfax_file.full_path, unprocessed_mets_folder + "/" + target_filename)
+    sys.stdout.write('.')
+    sys.stdout.flush()
+
+
+def pre_process_for_other_file(fairfax_file, unprocessed_other_folder):
+    # This is an unprocessed file, which means that it wasn't ingested for some reason.
+    # We assume that the pdfs associated with this file have already been pre-processed but we do want to capture
+    # what the title_code and date that are associated with the file itself before we move/copy it to the
+    # unprocessed_other_folder (also because it makes the file unique)
+    target_filename_prefix = fairfax_file.dirname.replace(source_folder, "")
+    target_filename = convert_to_filename(target_filename_prefix) + "_" + fairfax_file.file_name
+    move_or_copy(fairfax_file.full_path, unprocessed_other_folder + "/" + target_filename)
+    sys.stdout.write('.')
+    sys.stdout.flush()
 
 
 def pre_process_via_going_through_all_files(all_files):
-    unprocessed_folder = for_review_folder + "/UNPROCESSED"
-    make_directory_path(unprocessed_folder)
+    unprocessed_mets_folder = for_review_folder + "/UNPROCESSED/METS"
+    make_directory_path(unprocessed_mets_folder)
+    unprocessed_other_folder = for_review_folder + "/UNPROCESSED/OTHER"
+    make_directory_path(unprocessed_other_folder)
 
     current_file_count = 0
     total_files = len(all_files)
     for fairfax_file in all_files:
-        pre_process_for_given_file(fairfax_file, target_pre_process_folder, target_post_process_folder, unprocessed_folder)
+        if fairfax_file.is_fairfax_pdf_file:
+            pre_process_for_given_pdf_file(fairfax_file, target_pre_process_folder, target_post_process_folder)
+        elif fairfax_file.is_mets_xml_file:
+            pre_process_for_unprocessed_mets_xml_file(fairfax_file, unprocessed_mets_folder)
+        else:
+            pre_process_for_other_file(fairfax_file, unprocessed_other_folder)
 
         current_file_count += 1
         if current_file_count % 5000 == 0:
