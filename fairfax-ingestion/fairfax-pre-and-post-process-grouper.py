@@ -135,9 +135,11 @@ def parse_parameters():
     parser.add_argument('--ending_date', type=convert_string_to_date, default=datetime.date(2019, 06, 30),
         help='The ending date, format is yyyyMMdd')
     parser.add_argument('--do_pre_processing', dest='do_pre_processing', action='store_true',
-        help='Indicates that the source folder is unprocessed files (although they will be checked against processed)')
+        help='Do pre-processing. The source folder is unprocessed files (they will be checked against processed)')
     parser.add_argument('--do_post_processing', dest='do_post_processing', action='store_true',
-        help='Indicates that the source folder is processed files')
+        help="Do post-processing. The source folder contains processed files with a 'done' file for each group")
+    parser.add_argument('--do_list_unique_files', dest='do_list_unique_files', action='store_true',
+        help='List all files with unique filenames. The source folder is unprocessed files')
     parser.add_argument('--create_targets', dest='create_targets', action='store_true',
         help='Indicates that the target folders will be created if they do not already exist')
     parser.add_argument('--move_files', dest='move_files', action='store_true',
@@ -147,8 +149,8 @@ def parse_parameters():
     parser.add_argument('--test', dest='test', action='store_true',
         help='Indicates that only tests will be run')
 
-    parser.set_defaults(do_pre_processing=False, do_post_processing=False, create_targets=False,
-                        move_files=False, verbose=False, test=False)
+    parser.set_defaults(do_pre_processing=False, do_post_processing=False, do_list_unique_files=False,
+                        create_targets=False, move_files=False, verbose=False, test=False)
 
     args = parser.parse_args()
 
@@ -190,6 +192,7 @@ def display_parameter_values():
     print("    ending_date=" + ending_date.strftime(DATE_DISPLAY_FORMAT))
     print("    do_pre_processing=" + str(do_pre_processing))
     print("    do_post_processing=" + str(do_post_processing))
+    print("    do_list_unique_files=" + str(do_list_unique_files))
     print("    create_targets=" + str(create_targets))
     print("    move_files=" + str(move_files))
     print("    verbose=" + str(verbose))
@@ -233,6 +236,8 @@ def process_parameters(parsed_arguments):
     do_pre_processing = parsed_arguments.do_pre_processing
     global do_post_processing
     do_post_processing = parsed_arguments.do_post_processing
+    global do_list_unique_files
+    do_list_unique_files = parsed_arguments.do_list_unique_files
     global create_targets
     create_targets = parsed_arguments.create_targets
     global move_files
@@ -307,9 +312,16 @@ def process_parameters(parsed_arguments):
 
     print("")
 
-    if (not do_pre_processing and not do_post_processing) or (do_pre_processing and do_post_processing):
-        print("    Only ONE of do_pre_processing=" + str(do_pre_processing) + "and do_post_processing=" +
-              str(do_post_processing) + " MUST be set.")
+    do_command_count = 0
+    if do_pre_processing:
+        do_command_count += 1
+    if do_post_processing:
+        do_command_count += 1
+    if do_list_unique_files:
+        do_command_count += 1
+    if not do_command_count == 1:
+        print("    Only ONE of do_pre_processing=" + str(do_pre_processing) + " AND do_post_processing=" +
+              str(do_post_processing) + " AND do_list_unique_files=" + str(do_list_unique_files) + " MUST be set.")
         unacceptable_parameters = True
 
     if unacceptable_parameters:
@@ -644,6 +656,25 @@ def pre_process_via_going_through_all_files(all_files):
     timestamp_message("Processing completed: " + str(current_file_count) + "/" + str(total_files))
 
 
+def list_unique_files(all_files):
+    unique_files = set([])
+    for fairfax_file in all_files:
+        if fairfax_file.is_fairfax_pdf_file and starting_date <= fairfax_file.file_date <= ending_date:
+            unique_files.add(fairfax_file.file_name)
+
+    unique_files_list = []
+    for file_name in unique_files:
+        unique_files_list.append(FairfaxFile(file_name))
+
+    unique_files_list.sort(key=lambda fairfax_file: fairfax_file.file_date)
+
+    print("")
+    timestamp_message("Files by name sorted by date")
+    for fairfax_file in unique_files_list:
+        print(fairfax_file.file_name)
+    print("")
+
+
 def processing_loop():
     if do_pre_processing:
         all_files = get_all_files(source_folder)
@@ -651,10 +682,10 @@ def processing_loop():
     elif do_post_processing:
         all_done_files = get_all_named_files(source_folder, "done")
         post_process_via_going_through_all_done_files(all_done_files)
-
-    #all_pdf_files = get_all_suffixed_files(source_folder, ".pdf")
-
-    #all_done_files = get_all_named_files(source_folder, "done")
+    elif do_list_unique_files:
+        # We are really only looking for unique pdf files
+        all_pdf_files = get_all_suffixed_files(source_folder, ".pdf")
+        list_unique_files(all_pdf_files)
 
     # for index in range(0, 5):
     #    print("Getting md5sum for file=" + all_files[index] + ", type=" + str(type(all_files[index])))
