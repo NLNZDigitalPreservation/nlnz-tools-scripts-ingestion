@@ -480,12 +480,12 @@ def move_or_copy(source_file_path, target_file_or_folder):
     if len(move_or_copy_flags) > 0:
         command_list.append(move_or_copy_flags)
 
-    command_list.append(source_file_path)
-    command_list.append(target_file_or_folder)
-
     full_command = ""
     for argument in command_list:
         full_command += " " + argument
+
+    full_command += " \"" + source_file_path + "\""
+    full_command += " \"" + target_file_or_folder + "\""
 
     # Note that using shell=True has security implications (as there is no python checking of the full_command itself)
     output = subprocess.check_output(full_command, shell=True)
