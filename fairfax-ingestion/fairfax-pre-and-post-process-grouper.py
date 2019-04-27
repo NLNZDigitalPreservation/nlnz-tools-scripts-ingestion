@@ -439,9 +439,12 @@ def get_md5_sum(the_file):
 
         except subprocess.CalledProcessError:
             print("")
-            timestamp_message("WARNING (attempt " + str(attempt_count) + "/5) getting md5 sum for file=" + the_file)
+            timestamp_message("WARNING md5 sum (attempt " + str(attempt_count) + "/5) FAILED for file=" + the_file)
             timestamp_message("     output=" + output)
             time.sleep(time_delay_factor * attempt_count)
+
+    if is_successful_md5 and attempt_count > 1:
+        timestamp_message("md5 sum attempt=" + str(attempt_count) + " SUCCEEDED for file=" + the_file)
 
     if not is_successful_md5:
         # re-throw the last exception -- there's something more serious happening
