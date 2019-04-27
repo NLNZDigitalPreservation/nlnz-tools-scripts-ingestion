@@ -138,34 +138,40 @@ def parse_parameters():
                                                  "date and titleCode in appropriate pre-process and " +
                                                  "post-process folders.")
     parser.add_argument('--source_folder', type=str, required=True,
-        help='The source-folder for the files for processing')
+                        help='The source-folder for the files for processing')
     parser.add_argument('--target_pre_process_folder', type=str, required=True,
-        help='The target folder for pre-processed files')
+                        help='The target folder for pre-processed files')
     parser.add_argument('--target_post_process_folder', type=str, required=True,
-        help='The target folder for post-processed files')
+                        help='The target folder for post-processed files')
     parser.add_argument('--for_review_folder', type=str, required=True,
-        help='The target folder for unrecognized files')
+                        help='The target folder for unrecognized files')
     parser.add_argument('--starting_date', type=convert_string_to_date, default=datetime.date(2014, 1, 1),
-        help='The starting-date, format is yyyyMMdd')
+                        help='The starting-date, format is yyyyMMdd')
     parser.add_argument('--ending_date', type=convert_string_to_date, default=datetime.date(2019, 06, 30),
-        help='The ending date, format is yyyyMMdd')
+                        help='The ending date, format is yyyyMMdd')
     parser.add_argument('--do_pre_processing', dest='do_pre_processing', action='store_true',
-        help='Do pre-processing. The source folder is unprocessed files (they will be checked against processed)')
+                        help="Do pre-processing. The source folder is unprocessed files " +
+                             "(they will be checked against processed)")
     parser.add_argument('--do_post_processing', dest='do_post_processing', action='store_true',
-        help="Do post-processing. The source folder contains processed files with a 'done' file for each group")
+                        help="Do post-processing. The source folder contains processed files with a" +
+                             "'done' file for each group")
     parser.add_argument('--do_list_unique_files', dest='do_list_unique_files', action='store_true',
-        help='List all files with unique filenames. The source folder is unprocessed files')
+                        help='List all files with unique filenames. The source folder is unprocessed files')
     parser.add_argument('--create_targets', dest='create_targets', action='store_true',
-        help='Indicates that the target folders will be created if they do not already exist')
+                        help='Indicates that the target folders will be created if they do not already exist')
+    parser.add_argument('--pre_process_include_non_pdf_files', dest='pre_process_include_non_pdf_files',
+                        action='store_true',
+                        help='Indicates that non-pdf files will be processed. By default only PDF files are processed.')
     parser.add_argument('--move_files', dest='move_files', action='store_true',
-        help='Indicates that files will be moved to the target folder instead of copied')
+                        help='Indicates that files will be moved to the target folder instead of copied')
     parser.add_argument('--verbose', dest='verbose', action='store_true',
-        help='Indicates that operations will be done in a verbose manner')
+                        help='Indicates that operations will be done in a verbose manner')
     parser.add_argument('--test', dest='test', action='store_true',
-        help='Indicates that only tests will be run')
+                        help='Indicates that only tests will be run')
 
     parser.set_defaults(do_pre_processing=False, do_post_processing=False, do_list_unique_files=False,
-                        create_targets=False, move_files=False, verbose=False, test=False)
+                        create_targets=False, pre_process_include_non_pdf_files=False, move_files=False,
+                        verbose=False, test=False)
 
     args = parser.parse_args()
 
@@ -209,6 +215,7 @@ def display_parameter_values():
     print("    do_post_processing=" + str(do_post_processing))
     print("    do_list_unique_files=" + str(do_list_unique_files))
     print("    create_targets=" + str(create_targets))
+    print("    pre_process_include_non_pdf_files=" + str(pre_process_include_non_pdf_files))
     print("    move_files=" + str(move_files))
     print("    verbose=" + str(verbose))
     print("    test=" + str(test))
@@ -220,8 +227,8 @@ def display_processing_legend():
     print("Processing legend:")
     print("    .  -- indicates a file has been processed (either moved or copied)")
     print("    :  -- indicates a folder has been processed (either moved or copied)")
-    print("    +  -- indicates a duplicate file has been detected and is exactly the same as the target file.")
-    print("          If --move-files has been specified the source file is deleted.")
+    print("    +  -- indicates a duplicate pre-process file has been detected and is exactly the same as")
+    print("          the target file. If --move-files has been specified the source file is deleted.")
     print("    #  -- indicates a duplicate folder has been detected and will be copied or moved with the name of the")
     print("          folder with a '-<number>' appended to it.")
     print("    *  -- indicates that a pre-process file already exists (and is the same) in the post-processing")
@@ -257,6 +264,8 @@ def process_parameters(parsed_arguments):
     do_list_unique_files = parsed_arguments.do_list_unique_files
     global create_targets
     create_targets = parsed_arguments.create_targets
+    global pre_process_include_non_pdf_files
+    pre_process_include_non_pdf_files = parsed_arguments.pre_process_include_non_pdf_files
     global move_files
     move_files = parsed_arguments.move_files
     global verbose
@@ -677,8 +686,8 @@ def pre_process_for_given_pdf_file(fairfax_file, pre_processing_folder, post_pro
                     process_file = True
                     target_file_name = non_duplicate_filename(candidate_target_name)
                     print("")
-                    timestamp_message("WARNING Duplicate file=" + candidate_target_name + " renamed to=" +
-                                      target_file_name)
+                    timestamp_message("WARNING Duplicate named but different md5 hash file=" + candidate_target_name +
+                                      ", renamed to=" + target_file_name)
             else:
                 process_file = True
     else:
@@ -697,6 +706,8 @@ def pre_process_for_given_pdf_file(fairfax_file, pre_processing_folder, post_pro
             sys.stdout.write('.')
             sys.stdout.flush()
         move_or_copy(fairfax_file.full_path, actual_target)
+
+    return process_file
 
 
 def pre_process_for_unprocessed_mets_xml_file(fairfax_file, unprocessed_mets_folder):
@@ -733,14 +744,24 @@ def pre_process_via_going_through_all_files(all_files):
     make_directory_path(exists_in_post_but_not_same_file_folder_name)
 
     current_file_count = 0
+    pdf_files_checked_count = 0
+    pdf_files_processed_count = 0
+    mets_xml_files_processed_count = 0
+    other_files_processed_count = 0
     total_files = len(all_files)
     for fairfax_file in all_files:
         if fairfax_file.is_fairfax_pdf_file:
-            pre_process_for_given_pdf_file(fairfax_file, target_pre_process_folder, target_post_process_folder)
-        elif fairfax_file.is_mets_xml_file:
+            is_processed = pre_process_for_given_pdf_file(fairfax_file, target_pre_process_folder,
+                                                          target_post_process_folder)
+            if is_processed:
+                pdf_files_processed_count += 1
+            pdf_files_checked_count += 1
+        elif pre_process_include_non_pdf_files and fairfax_file.is_mets_xml_file:
             pre_process_for_unprocessed_mets_xml_file(fairfax_file, unprocessed_mets_folder)
-        else:
+            mets_xml_files_processed_count += 1
+        elif pre_process_include_non_pdf_files:
             pre_process_for_other_file(fairfax_file, unprocessed_other_folder)
+            other_files_processed_count += 1
 
         current_file_count += 1
         if current_file_count % 5000 == 0:
@@ -749,6 +770,10 @@ def pre_process_via_going_through_all_files(all_files):
 
     print("")
     timestamp_message("Processing completed: " + str(current_file_count) + "/" + str(total_files))
+    timestamp_message("    PDF files checked=" + str(pdf_files_checked_count) +
+                      ", processed=" + str(pdf_files_processed_count))
+    timestamp_message("    mets.xml files processed=" + str(mets_xml_files_processed_count))
+    timestamp_message("    other files processed=" + str(other_files_processed_count))
 
 
 def list_unique_files(all_files):
