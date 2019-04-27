@@ -14,13 +14,14 @@
 # One or the other: do_pre_processing, do_post_processing
 # Optional create_targets, move_files, verbose, test.
 
-import datetime
 import argparse
+import datetime
 import os
-import sys
+import re
 import platform
 import subprocess
-import re
+import sys
+import time
 
 move_or_copy_flags = ""
 is_sun_os = False
@@ -417,12 +418,34 @@ def get_all_files(root_directory_path):
 
 
 def get_md5_sum(the_file):
-    if is_sun_os:
-        output = subprocess.check_output(["digest", "-a", "md5", "-v", the_file])
-        md5sum = str(output).split(" ")[3]
-    else:
-        output = subprocess.check_output(["md5sum", the_file])
-        md5sum = str(output).split(" ")[0]
+    attempt_count = 0
+    time_delay_factor = 0.3
+    is_successful_md5 = False
+    md5sum = ""
+
+    # We'll try 5 times
+    while not is_successful_md5 and attempt_count < 5:
+        attempt_count += 1
+        output = "NO-OUTPUT-PROVIDED"
+        try:
+            if is_sun_os:
+                output = subprocess.check_output(["digest", "-a", "md5", "-v", the_file])
+                md5sum = str(output).split(" ")[3]
+            else:
+                output = subprocess.check_output(["md5sum", the_file])
+                md5sum = str(output).split(" ")[0]
+
+            is_successful_md5 = True
+
+        except subprocess.CalledProcessError:
+            print("")
+            timestamp_message("WARNING (attempt " + str(attempt_count) + "/5) getting md5 sum for file=" + the_file)
+            timestamp_message("     output=" + output)
+            time.sleep(time_delay_factor * attempt_count)
+
+    if not is_successful_md5:
+        # re-throw the last exception -- there's something more serious happening
+        raise
 
     return md5sum
 
