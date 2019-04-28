@@ -418,9 +418,9 @@ def get_all_files(root_directory_path):
 
 
 def get_md5_sum(the_file):
-    max_attempts = 5
+    max_attempts = 6
     attempt_count = 0
-    time_delay_factors = [0.0, 0.3, 0.9, 2.5, 15.0, 60.0]
+    time_delay_factors = [0.0, 0.3, 0.9, 4.0, 60.0, 120.0]
     is_successful_md5 = False
     md5sum = ""
 
@@ -444,8 +444,8 @@ def get_md5_sum(the_file):
                               " FAILED for file=" + the_file)
             timestamp_message("    output=" + output)
             if attempt_count < max_attempts:
-                delay = time_delay_factors.pop(attempt_count)
-                timestamp_message("    delaying next md5 sum attempt for " + str(delay) + " milliseconds.")
+                delay = time_delay_factors[attempt_count]
+                timestamp_message("    delaying next md5 sum attempt for " + str(delay) + " seconds.")
                 time.sleep(delay)
 
     if is_successful_md5 and attempt_count > 1:
