@@ -418,15 +418,16 @@ def get_all_files(root_directory_path):
 
 
 def get_md5_sum(the_file):
+    max_attempts = 5
     attempt_count = 0
-    time_delay_factor = 0.3
+    time_delay_factors = [0.0, 0.3, 0.9, 2.5, 15.0, 60.0]
     is_successful_md5 = False
     md5sum = ""
 
     # We'll try 5 times
-    while not is_successful_md5 and attempt_count < 5:
+    while not is_successful_md5 and attempt_count < max_attempts:
         attempt_count += 1
-        output = "NO-OUTPUT-PROVIDED"
+        output = "<no-output-provided>"
         try:
             if is_sun_os:
                 output = subprocess.check_output(["digest", "-a", "md5", "-v", the_file])
@@ -439,9 +440,13 @@ def get_md5_sum(the_file):
 
         except subprocess.CalledProcessError:
             print("")
-            timestamp_message("WARNING md5 sum (attempt " + str(attempt_count) + "/5) FAILED for file=" + the_file)
-            timestamp_message("     output=" + output)
-            time.sleep(time_delay_factor * attempt_count)
+            timestamp_message("WARNING md5 sum (attempt " + str(attempt_count) + "/" + str(max_attempts) +
+                              " FAILED for file=" + the_file)
+            timestamp_message("    output=" + output)
+            if attempt_count < max_attempts:
+                delay = time_delay_factors.pop(attempt_count)
+                timestamp_message("    delaying next md5 sum attempt for " + str(delay) + " milliseconds.")
+                time.sleep(delay)
 
     if is_successful_md5 and attempt_count > 1:
         timestamp_message("md5 sum attempt=" + str(attempt_count) + " SUCCEEDED for file=" + the_file)
