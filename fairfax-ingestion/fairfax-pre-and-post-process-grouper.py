@@ -229,7 +229,7 @@ def display_processing_legend():
     print("    .  -- indicates a file has been processed (either moved or copied)")
     print("    :  -- indicates a folder has been processed (either moved or copied)")
     print("    +  -- indicates a duplicate pre-process file has been detected and is exactly the same as")
-    print("          the target file. If --move-files has been specified the source file is deleted.")
+    print("          the target file. If --move_files has been specified the source file is deleted.")
     print("    #  -- indicates a duplicate folder has been detected and will be copied or moved with the name of the")
     print("          folder with a '-<number>' appended to it.")
     print("    *  -- indicates that a pre-process file already exists (and is the same) in the post-processing")
@@ -560,12 +560,12 @@ def delete_folder(folder_to_delete):
 
 
 # file structure for post-processing is the following:
-# <newspapers|magazines>/<title_code>/<year>/<file_date_string>/
+# <magazines|newspapers>/<title_code>/<year>/<file_date_string>/
 #                                                       |- done
 #                                                       |- content/
 #                                                               |- mets.xml
 #                                                               |- streams/
-#                                                                       |- <file_name>
+#                                                                       |- <pdf-files>
 def file_exists_post_processing(fairfax_file, post_processing_folder):
     target_file_post_type = fairfax_file.title_code + "/" + str(fairfax_file.file_date.year) + "/" +\
                        fairfax_file.file_date_string + "/content/streams/" + fairfax_file.file_name

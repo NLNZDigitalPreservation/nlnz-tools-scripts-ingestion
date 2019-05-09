@@ -14,7 +14,9 @@ We want to keep track of our scripts to better share and support them.
 
 ## Important
 
-At this time there is no important information to impart.
+Some of this scripting code code is related to the codebase *nlnz-tools-sip-generation-fairfax* found in the github
+repository: https://github.com/NLNZDigitalPreservation/nlnz-tools-sip-generation-fairfax and there is an expectation
+that the two codebases will work together.
 
 ## Versioning
 
@@ -27,7 +29,70 @@ There are no artifacts that are created or installed.
 
 ## Scripts Reference
 
+### fairfax-pre-and-post-process-grouper.py
+
+Takes care of organising Fairfax files in two different stages:
+1. When they are taken from a source location (such as a ftp folder) and organized for processing (this is a
+   pre-processing target).
+2. When they have been ingested into Rosetta and now need to be moved to a post-processed location for archiving.
+
+This script has also been used to aggregate files and differentiate between those that have been processed and those
+that have not been processed.
+
+See the section *Folder structures* for descriptions of how folder structures are set up for pre-process and
+post-process folders.
+
+This script requires Python 2.7. It has not been tested with Python 3.
+
+```
+usage: fairfax-pre-and-post-process-grouper.py [-h]
+       --source_folder SOURCE_FOLDER
+       --target_pre_process_folder TARGET_PRE_PROCESS_FOLDER
+       --target_post_process_folder TARGET_POST_PROCESS_FOLDER
+       --for_review_folder FOR_REVIEW_FOLDER
+       [--starting_date STARTING_DATE]
+       [--ending_date ENDING_DATE]
+       [--do_pre_processing]
+       [--do_post_processing]
+       [--do_list_unique_files]
+       [--create_targets]
+       [--pre_process_include_non_pdf_files]
+       [--move_files] [--verbose]
+       [--test]
+
+Process pre-and-post processed Fairfax files by grouping them by date and
+titleCode in appropriate pre-process and post-process folders.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --source_folder SOURCE_FOLDER
+                        The source-folder for the files for processing
+  --target_pre_process_folder TARGET_PRE_PROCESS_FOLDER
+                        The target folder for pre-processed files
+  --target_post_process_folder TARGET_POST_PROCESS_FOLDER
+                        The target folder for post-processed files
+  --for_review_folder FOR_REVIEW_FOLDER
+                        The target folder for unrecognized files
+  --starting_date STARTING_DATE
+                        The starting-date, format is yyyyMMdd
+  --ending_date ENDING_DATE
+                        The ending date, format is yyyyMMdd
+  --do_pre_processing   Do pre-processing. The source folder is unprocessed files
+                        (they will be checked against processed)
+  --do_post_processing  Do post-processing. The source folder contains processed files with a'done' file for each group
+  --do_list_unique_files List all files with unique filenames. The source folder is unprocessed files
+  --create_targets      Indicates that the target folders will be created if they do not already exist
+  --pre_process_include_non_pdf_files
+                        Indicates that non-pdf files will be processed. By default only PDF files are processed.
+  --move_files          Indicates that files will be moved to the target folder instead of copied
+  --verbose             Indicates that operations will be done in a verbose manner
+  --test                Indicates that only tests will be run
+```
+
 ### fairfax-pre-process-grouper.sh
+
+NOTE: This script is no longer being actively maintained. We recommend the use of the python script
+fairfax-pre-and-post-process-grouper.py.
 
 Takes Fairfax files that are in a set of directories or subdirectories and reorganizes them with the following structure:
 ```
@@ -122,6 +187,40 @@ ${scriptLocation}/recreate-files-with-structure.groovy \
     "${sampleDoneFilePath}" \
     "${sampleOtherFilePath}"
 ```
+
+## Folder structures
+
+More descriptions on folder structures can be found in the github repository:
+https://github.com/NLNZDigitalPreservation/nlnz-tools-sip-generation-fairfax
+
+The expectation is that these different codebases work together with the same assumptions and structures.
+
+### Pre-processing stage folder structure
+
+Pre-processing takes place on a daily basis and files are processed by a given date and Title Code. The script
+`fairfax-pre-and-post-process-grouper.py` will take a source group of files and put them in the following structure:
+```
+<targetPreProcessingFolder>/<date-in-yyyyMMdd-format>/<TitleCode>/{files for that titleCode and date}
+```
+
+### Ingested or post-processed stage folder structure
+
+When files have been ingested into Rosetta, Rosetta places a `done` file at the root of the ingestion folder. Those
+files are moved to the ingested or post-processed structure by a script, possibly
+`fairfax-pre-and-post-process-grouper.py`. The folder structure for the ingested (post-processed) stage is as follows:
+```
+<targetPostProcessedFolder>/<magazines|newspapers>/<TitleCode>/<yyyy>/<date-in-yyyyMMdd-format>
+```
+In this dated folder, the file structure matches the same structure that was ingested into Rosetta, namely:
+```
+<date-in-yyyyMMdd-format>
+   |- done
+   |- content/
+           |- mets.xml
+           |- streams/
+                   |- <pdf-files>
+```
+Note that the `mets.xml` file is placed in the `content` folder. The `done` files is in the root `yyyyMMdd` folder.
 
 ## Tests
 
