@@ -564,9 +564,11 @@ def print_debug(message):
 def print_and_report(output, output_file, include_console_output=True):
     if include_console_output:
         print(output)
+        sys.stdout.flush()
     if output_file is not None:
         output_file.write(output)
         output_file.write("\n")
+        output_file.flush()
 
 
 def reports_file_name_for_date_and_folder(report_date, report_root_folder):
