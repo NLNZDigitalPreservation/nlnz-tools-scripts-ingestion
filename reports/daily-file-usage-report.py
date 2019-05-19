@@ -67,7 +67,7 @@ def determine_if_sun_os():
 def parse_parameters():
     parser = argparse.ArgumentParser(description="daily-file-usage-report.py: Daily file usage report.")
     parser.add_argument('--source_folder', type=str, required=True,
-                        help='The root source-folder for the report')
+                        help='The root source-folder for the report.')
     parser.add_argument('--reports_folder', type=str, required=True,
                         help='The folder where reports exist and get written.')
     parser.add_argument('--number_previous_days', type=int, default=0,
@@ -76,17 +76,22 @@ def parse_parameters():
                         help='Indicates that the reports folder will get created. Otherwise it must already exist.')
     parser.add_argument('--include_file_details_in_console_output', dest='include_file_details_in_console_output',
                         action='store_true', help='Indicates that individual file details will output to the ' +
-                                                  'console as well as the reports file')
+                                                  'console as well as the reports file.')
+    parser.add_argument('--calculate_md5_hash', dest='calculate_md5_hash',
+                        action='store_true', help='Calculate and report the md5 hash of individual files ' +
+                                                  '(this is a very intensive I/O operation).')
+    parser.add_argument('--include_dot_directories', dest='include_dot_directories',
+                        action='store_true', help="Include first-level root subdirectories that start with a '.'")
     parser.add_argument('--verbose', dest='verbose', action='store_true',
                         help='Indicates that operations will be done in a verbose manner. ' +
                              'NOTE: This means that no csv report file will be generated.')
     parser.add_argument('--debug', dest='debug', action='store_true',
-                        help='Indicates that operations will include debug output')
+                        help='Indicates that operations will include debug output.')
     parser.add_argument('--test', dest='test', action='store_true',
-                        help='Indicates that only tests will be run')
+                        help='Indicates that only tests will be run.')
 
-    parser.set_defaults(create_reports_folder=False, include_file_details_in_console_output=False, verbose=False,
-                        debug=False, test=False)
+    parser.set_defaults(create_reports_folder=False, include_file_details_in_console_output=False,
+                        calculate_md5_hash=False, verbose=False, debug=False, test=False)
 
     args = parser.parse_args()
 
@@ -101,6 +106,8 @@ def display_parameter_values():
     print("    number_previous_days=" + str(number_previous_days))
     print("    create_reports_folder=" + str(create_reports_folder))
     print("    include_file_details_in_console_output=" + str(include_file_details_in_console_output))
+    print("    include_dot_directories=" + str(include_dot_directories))
+    print("    calculate_md5_hash=" + str(calculate_md5_hash))
     print("    verbose=" + str(verbose))
     print("    debug=" + str(debug))
     print("    test=" + str(test))
@@ -122,6 +129,10 @@ def process_parameters(parsed_arguments):
     create_reports_folder = parsed_arguments.create_reports_folder
     global include_file_details_in_console_output
     include_file_details_in_console_output = parsed_arguments.include_file_details_in_console_output
+    global calculate_md5_hash
+    calculate_md5_hash = parsed_arguments.calculate_md5_hash
+    global include_dot_directories
+    include_dot_directories = parsed_arguments.include_dot_directories
     global verbose
     verbose = parsed_arguments.verbose
     global debug
@@ -250,7 +261,7 @@ class DirectoryStatistics:
                 file_path = os.path.join(dirpath, the_filename)
                 file_size = os.path.getsize(file_path)
                 file_creation_date = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
-                file_md5_hash = get_md5_sum(file_path)
+                file_md5_hash = get_md5_sum(file_path) if calculate_md5_hash else "<not-calculated>"
                 file_statistics = FileStatistics(the_filename, dirpath, file_size, file_creation_date, file_md5_hash)
                 files_list.append(file_statistics)
                 the_size += file_size
@@ -393,7 +404,11 @@ def immediate_subdirectories(root_directory):
     for name in os.listdir(root_directory):
         potential_subdirectory = os.path.join(root_directory, name)
         if is_directory(potential_subdirectory):
-            the_subdirectories.append(potential_subdirectory)
+            include_subdirectory = True
+            if name.startswith("."):
+                include_subdirectory = include_dot_directories
+            if include_subdirectory:
+                the_subdirectories.append(potential_subdirectory)
 
     return the_subdirectories
 

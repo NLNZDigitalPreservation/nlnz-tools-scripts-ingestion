@@ -29,7 +29,7 @@ There are no artifacts that are created or installed.
 
 ## Scripts Reference
 
-### fairfax-pre-and-post-process-grouper.py
+### fairfax-ingestion/fairfax-pre-and-post-process-grouper.py
 
 Takes care of organising Fairfax files in two different stages:
 1. When they are taken from a source location (such as a ftp folder) and organized for processing (this is a
@@ -89,7 +89,7 @@ optional arguments:
   --test                Indicates that only tests will be run
 ```
 
-### fairfax-pre-process-grouper.sh
+### fairfax-ingestion/fairfax-pre-process-grouper.sh
 
 NOTE: This script is no longer being actively maintained. We recommend the use of the python script
 fairfax-pre-and-post-process-grouper.py.
@@ -129,7 +129,7 @@ ${scriptLocation}/fairfax-pre-process-grouper.sh \
     --forReviewFolder="${forReviewFolder}"
 ```
 
-### recreate-fairfax-restore-structure.groovy
+### fairfax-ingestion/recreate-fairfax-restore-structure.groovy
 
 Recreates the `Fairfax-RESTORE` structure in another directory using sample files. This is to allow testing of the processing of
 Fairfax files without using actual Fairfax files. The `sourceFileListingPath` is a text file containing a listing of all the
@@ -152,7 +152,7 @@ ${scriptLocation}/recreate-fairfax-restore-structure.groovy \
     "${samplePdfFilePath}"
 ```
 
-### recreate-files-with-structure.groovy
+### fairfax-ingestion/recreate-files-with-structure.groovy
 
 Recreates files with a directory structure in another directory using sample files. This is to allow testing of the processing
 of that particular structure without using actual Fairfax files (or some other set of files that we don't want to move out of a
@@ -186,6 +186,54 @@ ${scriptLocation}/recreate-files-with-structure.groovy \
     "${sampleMetsFilePath}" \
     "${sampleDoneFilePath}" \
     "${sampleOtherFilePath}"
+```
+
+### reports/daily-file-usage-report.py
+
+Provides a daily usage report of a set of subfolders of a given root folder.
+```
+usage: daily-file-usage-report.py [-h] --source_folder SOURCE_FOLDER
+                                  --reports_folder REPORTS_FOLDER
+                                  [--number_previous_days NUMBER_PREVIOUS_DAYS]
+                                  [--create_reports_folder]
+                                  [--include_file_details_in_console_output]
+                                  [--calculate_md5_hash]
+                                  [--include_dot_folders] [--verbose]
+                                  [--debug] [--test]
+
+daily-file-usage-report.py: Daily file usage report.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --source_folder SOURCE_FOLDER
+                        The root source-folder for the report.
+  --reports_folder REPORTS_FOLDER
+                        The folder where reports exist and get written.
+  --number_previous_days NUMBER_PREVIOUS_DAYS
+                        The number of previous days to include in the report.
+                        The default is 0.
+  --create_reports_folder
+                        Indicates that the reports folder will get created. Otherwise it must already exist.
+  --include_file_details_in_console_output
+                        Indicates that individual file details will output to the console as well as the reports file.
+  --calculate_md5_hash  Calculate and report the md5 hash of individual files (this is a very intensive I/O operation).
+  --include_dot_directories
+                        Include first-level root subdirectories that start with a '.'
+  --verbose             Indicates that operations will be done in a verbose manner.
+                        NOTE: This means that no csv report file will be generated.
+  --debug               Indicates that operations will include debug output.
+  --test                Indicates that only tests will be run.
+```
+
+Example usage:
+```
+sourceFolder=<location-of-ftp-subfolders-or...>
+reportsFolder=<location-of-reports>
+
+daily-file-usage-report.py \
+    --source_folder "${sourceFolder}" \
+    --reports_folder "${reportsFolder}" \
+    --number_previous_days 7
 ```
 
 ## Folder structures
