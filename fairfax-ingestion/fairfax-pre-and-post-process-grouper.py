@@ -535,7 +535,10 @@ def move_or_copy(source_file_path, target_file_or_folder):
 
 def delete_file(file_to_delete):
     if is_file(file_to_delete):
-        command_list = ["rm", file_to_delete]
+        if is_sun_os:
+            command_list = ["rm", file_to_delete]
+        else:
+            command_list = ["rm", "-f", file_to_delete]
         output = subprocess.check_output(command_list)
         sys.stdout.write('-')
         sys.stdout.flush()
