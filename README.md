@@ -236,6 +236,35 @@ daily-file-usage-report.py \
     --number_previous_days 7
 ```
 
+### utilities/bulk-file-rename.py
+
+Simple utility for renaming files in bulk. Usage is as follows:
+```
+usage: bulk-file-rename.py [-h] --source_folder SOURCE_FOLDER
+                           --file_name_portion_to_replace
+                           FILE_NAME_PORTION_TO_REPLACE
+                           --file_name_portion_replacement
+                           FILE_NAME_PORTION_REPLACEMENT [--verbose] [--debug]
+                           [--test]
+
+bulk-file-rename.py: Bulk filename replacement.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --source_folder SOURCE_FOLDER
+                        The root source-folder for the report.
+  --file_name_portion_to_replace FILE_NAME_PORTION_TO_REPLACE
+                        The portion of the filename that will be replacement.
+  --file_name_portion_replacement FILE_NAME_PORTION_REPLACEMENT
+                        The replacement portion of the filename.
+  --verbose             Indicates that operations will be done in a verbose
+                        manner. NOTE: This means that no csv report file will
+                        be generated.
+  --debug               Indicates that operations will include debug output.
+  --test                Indicates that only tests will be run.
+
+```
+
 ## Folder structures
 
 More descriptions on folder structures can be found in the github repository:
