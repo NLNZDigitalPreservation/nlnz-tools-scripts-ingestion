@@ -196,10 +196,14 @@ class DirectoryDetails:
         directory_name = os.path.basename(root_directory)
         directory_root = os.path.dirname(root_directory)
         directory_statistics_collection = []
+        # timestamp_message("BEFORE immediate_subdirectories")
         the_subdirectories = immediate_subdirectories(root_directory)
+        # timestamp_message("AFTER immediate_subdirectories")
         for subdirectory in the_subdirectories:
+            # timestamp_message("BEFORE subdirectory=" + subdirectory)
             directory_statistics = DirectoryStatistics.calculate_for_directory(subdirectory)
             directory_statistics_collection.append(directory_statistics)
+            # timestamp_message("AFTER subdirectory=" + subdirectory)
 
         the_date = datetime.datetime.now()
         return cls(directory_name, directory_root, the_date, directory_statistics_collection)
@@ -247,24 +251,38 @@ class DirectoryStatistics:
         self.total_size = total_size
         self.all_files = all_files
 
+    @staticmethod
+    def handle_os_walk_error(exception_instance):
+        print("ERROR: trying file=" + exception_instance.filename)
+        print("ERROR: exception_instance.args=" + exception_instance.args)
+        print("ERROR: type(exception_instance)=" + type(exception_instance))
+
     @classmethod
     def calculate_for_directory(cls, root_directory):
+        print_debug("calculating for root_directory=" + root_directory)
         the_date = datetime.datetime.now()
         the_size = 0
         the_number_of_files = 0
         files_list = []
         the_number_of_folders = 0
-        for dirpath, dirnames, filenames in os.walk(root_directory):
-            the_number_of_folders += 1
-            for the_filename in filenames:
-                the_number_of_files += 1
-                file_path = os.path.join(dirpath, the_filename)
-                file_size = os.path.getsize(file_path)
-                file_creation_date = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
-                file_md5_hash = get_md5_sum(file_path) if calculate_md5_hash else "<not-calculated>"
-                file_statistics = FileStatistics(the_filename, dirpath, file_size, file_creation_date, file_md5_hash)
-                files_list.append(file_statistics)
-                the_size += file_size
+        already_processed_directories = set()
+        for dirpath, dirnames, filenames in os.walk(root_directory, onerror=DirectoryStatistics.handle_os_walk_error):
+            print_debug("processing dirpath=" + dirpath)
+            if dirpath in already_processed_directories:
+                print_debug("already processed dirpath=" + dirpath)
+            else:
+                already_processed_directories.add(dirpath)
+                the_number_of_folders += 1
+                for the_filename in filenames:
+                    print_debug("processing the_filename=" + the_filename)
+                    the_number_of_files += 1
+                    file_path = os.path.join(dirpath, the_filename)
+                    file_size = os.path.getsize(file_path)
+                    file_creation_date = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+                    file_md5_hash = get_md5_sum(file_path) if calculate_md5_hash else "<not-calculated>"
+                    file_statistics = FileStatistics(the_filename, dirpath, file_size, file_creation_date, file_md5_hash)
+                    files_list.append(file_statistics)
+                    the_size += file_size
         return cls(root_directory, the_date, the_number_of_files, the_number_of_folders, the_size, files_list)
 
     @classmethod
