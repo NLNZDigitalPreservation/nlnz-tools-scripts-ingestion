@@ -83,7 +83,7 @@ def parse_parameters():
     parser.add_argument('--include_dot_directories', dest='include_dot_directories',
                         action='store_true', help="Include first-level root subdirectories that start with a '.'")
     parser.add_argument('--ignore_unchanged_directories', dest='ignore_unchanged_directories',
-                        action='store_true', help="Do not report changes on folders that haven't changed.")
+                        action='store_true', help="Do not report changes for directories that haven't changed.")
     parser.add_argument('--verbose', dest='verbose', action='store_true',
                         help='Indicates that operations will be done in a verbose manner. ' +
                              'NOTE: This means that no csv report file will be generated.')
@@ -93,7 +93,8 @@ def parse_parameters():
                         help='Indicates that only tests will be run.')
 
     parser.set_defaults(create_reports_folder=False, include_file_details_in_console_output=False,
-                        calculate_md5_hash=False, verbose=False, debug=False, test=False)
+                        include_dot_directories=False, ignore_unchanged_directories=False, calculate_md5_hash=False,
+                        verbose=False, debug=False, test=False)
 
     args = parser.parse_args()
 

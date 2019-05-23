@@ -37,8 +37,8 @@ def parse_parameters():
                         help='The root source-folder for the report.')
     parser.add_argument('--file_name_portion_to_replace', type=str, required=True,
                         help='The portion of the filename that will be replacement.')
-    parser.add_argument('--file_name_portion_replacement', type=str, required=True,
-                        help='The replacement portion of the filename.')
+    parser.add_argument('--file_name_portion_replacement', type=str, required=False,
+                        help='The replacement portion of the filename. If not specified, then an empty string is used.')
     parser.add_argument('--verbose', dest='verbose', action='store_true',
                         help='Indicates that operations will be done in a verbose manner. ' +
                              'NOTE: This means that no csv report file will be generated.')
@@ -47,7 +47,7 @@ def parse_parameters():
     parser.add_argument('--test', dest='test', action='store_true',
                         help='Indicates that only tests will be run.')
 
-    parser.set_defaults(verbose=False, debug=False, test=False)
+    parser.set_defaults(file_name_portion_replacement="", verbose=False, debug=False, test=False)
 
     args = parser.parse_args()
 

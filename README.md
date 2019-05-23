@@ -219,6 +219,8 @@ optional arguments:
   --calculate_md5_hash  Calculate and report the md5 hash of individual files (this is a very intensive I/O operation).
   --include_dot_directories
                         Include first-level root subdirectories that start with a '.'
+  --ignore_unchanged_directories
+                        Do not report changes for directories that haven't changed.
   --verbose             Indicates that operations will be done in a verbose manner.
                         NOTE: This means that no csv report file will be generated.
   --debug               Indicates that operations will include debug output.
@@ -256,7 +258,7 @@ optional arguments:
   --file_name_portion_to_replace FILE_NAME_PORTION_TO_REPLACE
                         The portion of the filename that will be replacement.
   --file_name_portion_replacement FILE_NAME_PORTION_REPLACEMENT
-                        The replacement portion of the filename.
+                        The replacement portion of the filename. If not specified, then an empty string is used.
   --verbose             Indicates that operations will be done in a verbose
                         manner. NOTE: This means that no csv report file will
                         be generated.
