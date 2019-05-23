@@ -82,6 +82,8 @@ def parse_parameters():
                                                   '(this is a very intensive I/O operation).')
     parser.add_argument('--include_dot_directories', dest='include_dot_directories',
                         action='store_true', help="Include first-level root subdirectories that start with a '.'")
+    parser.add_argument('--ignore_unchanged_directories', dest='ignore_unchanged_directories',
+                        action='store_true', help="Do not report changes on folders that haven't changed.")
     parser.add_argument('--verbose', dest='verbose', action='store_true',
                         help='Indicates that operations will be done in a verbose manner. ' +
                              'NOTE: This means that no csv report file will be generated.')
@@ -107,6 +109,7 @@ def display_parameter_values():
     print("    create_reports_folder=" + str(create_reports_folder))
     print("    include_file_details_in_console_output=" + str(include_file_details_in_console_output))
     print("    include_dot_directories=" + str(include_dot_directories))
+    print("    ignore_unchanged_directories=" + str(ignore_unchanged_directories))
     print("    calculate_md5_hash=" + str(calculate_md5_hash))
     print("    verbose=" + str(verbose))
     print("    debug=" + str(debug))
@@ -133,6 +136,8 @@ def process_parameters(parsed_arguments):
     calculate_md5_hash = parsed_arguments.calculate_md5_hash
     global include_dot_directories
     include_dot_directories = parsed_arguments.include_dot_directories
+    global ignore_unchanged_directories
+    ignore_unchanged_directories = parsed_arguments.ignore_unchanged_directories
     global verbose
     verbose = parsed_arguments.verbose
     global debug
@@ -342,20 +347,26 @@ class DirectoryStatistics:
 
         return the_output
 
-    def csv_output_comparison(self, current_directory_details):
+    def csv_output_comparison(self, current_directory_details, ignore_unchanged):
         print_debug("comparing self=" + self.csv_output() + " WITH current=" + current_directory_details.csv_output())
         change_in_number_files = current_directory_details.number_of_files - self.number_of_files
         change_in_number_folders = current_directory_details.number_of_folders - self.number_of_folders
         change_in_total_size = current_directory_details.total_size - self.total_size
-        include_positive_sign = True
-        the_output = "" + self.directory_name + CSV_COLUMN_SEPARATOR + self.date.strftime(DATE_DISPLAY_FORMAT) +\
-                     CSV_COLUMN_SEPARATOR + format_storage_size(self.total_size) + CSV_COLUMN_SEPARATOR +\
-                     format_storage_size(change_in_total_size, include_positive_sign) + CSV_COLUMN_SEPARATOR +\
-                     "{:,}".format(self.number_of_folders) + CSV_COLUMN_SEPARATOR +\
-                     "{:+,}".format(change_in_number_folders) + CSV_COLUMN_SEPARATOR +\
-                     "{:,}".format(self.number_of_files) + CSV_COLUMN_SEPARATOR + "{:+,}".format(change_in_number_files)
-
-        return the_output
+        has_changes = change_in_number_files != 0 or change_in_number_folders != 0 or abs(change_in_total_size) >= 1.0
+        print_debug("has_changes=" + str(has_changes) + ", change_in_number_files=" + str(change_in_number_files) +
+              ", change_in_number_folders=" + str(change_in_number_folders) + ", change_in_total_size=" +
+              str(change_in_total_size))
+        if has_changes or not ignore_unchanged:
+            include_positive_sign = True
+            the_output = "" + self.directory_name + CSV_COLUMN_SEPARATOR + self.date.strftime(DATE_DISPLAY_FORMAT) +\
+                         CSV_COLUMN_SEPARATOR + format_storage_size(self.total_size) + CSV_COLUMN_SEPARATOR +\
+                         format_storage_size(change_in_total_size, include_positive_sign) + CSV_COLUMN_SEPARATOR +\
+                         "{:,}".format(self.number_of_folders) + CSV_COLUMN_SEPARATOR +\
+                         "{:+,}".format(change_in_number_folders) + CSV_COLUMN_SEPARATOR +\
+                         "{:,}".format(self.number_of_files) + CSV_COLUMN_SEPARATOR + "{:+,}".format(change_in_number_files)
+            return the_output
+        else:
+            return None
 
 
 class FileStatistics:
@@ -673,6 +684,9 @@ def directories_report(root_folder):
         print_and_report("", report_file)
         if len(previous_directory_details) > 0:
             print_and_report(DIRECTORY_STATISTICS_COMPARISON_CSV_TITLE, report_file)
+            if ignore_unchanged_directories:
+                print_and_report("Note: only showing directories that have changed in the past " +
+                                 str(number_previous_days) + " days", report_file)
             print_and_report(DIRECTORY_STATISTICS_COMPARISON_CSV_HEADER, report_file)
             print_debug("len(current_directory_details.directory_statistics_collection)=" +
                         str(len(current_directory_details.directory_statistics_collection)))
@@ -694,8 +708,10 @@ def directories_report(root_folder):
                         directory_name_matches = directory_name == previous_directory_statistics.directory_name
                         if directory_root_matches and directory_name_matches:
                             print_debug("MATCH")
-                            print_and_report(previous_directory_statistics.csv_output_comparison(directory_statistics),
-                                             report_file)
+                            previous_statistics = previous_directory_statistics.csv_output_comparison(
+                                directory_statistics, ignore_unchanged_directories)
+                            if previous_statistics is not None:
+                                print_and_report(previous_statistics, report_file)
 
     print_and_report("", report_file)
 
