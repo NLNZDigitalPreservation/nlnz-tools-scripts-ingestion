@@ -48,7 +48,7 @@ REPLACEMENT_FILE_PATH_SEPARATOR = "_"
 PDF_FILENAME_REGEX_PATTERN = "(.*)(\\.pdf)"
 PDF_FILENAME_REGEX = re.compile(PDF_FILENAME_REGEX_PATTERN)
 
-PDF_COMPONENT_REGEX_PATTERN = "(.*?)\\/(\\w{5,7})-([0-9]{8})(-\\w{3,4}.*?\\.pdf)"
+PDF_COMPONENT_REGEX_PATTERN = "(.*?)\\/(\\w{5,7})-([0-9]{8})(-\\w{3,4}.*?\\.[pP]{1}[dD]{1}[fF]{1})"
 PDF_COMPONENT_REGEX = re.compile(PDF_COMPONENT_REGEX_PATTERN)
 
 FAIRFAX_PDF_FILE_REGEX_PATTERN = "(?P<titleCode>[a-zA-Z0-9]{3,4})(?P<editionCode>[a-zA-Z0-9]{2,3})-(?P<date>\\d{8})-" +\

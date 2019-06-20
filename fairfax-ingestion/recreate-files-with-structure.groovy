@@ -8,7 +8,7 @@ import java.nio.file.Files
 // 2. second is target or destination folder
 // 3. third is source file filename cutoff (the point after which the directory structure is recreated)
 // 3. third is sample pdf file
-// 4. fourth is sample metx.xml file
+// 4. fourth is sample mets.xml file
 // 5. fifth is sample done file
 // 6. sixth is sample any other file
 
@@ -69,6 +69,8 @@ if (!sampleOtherFile.exists()) {
     throw new RuntimeException("sampleOtherFile=${sampleOtherFile.getCanonicalPath()} must exist!")
 }
 
+String pdfPattern = ".*\\.[pP]{1}[dD]{1}[fF]{1}"
+
 long processedFileCount = 0
 
 String line
@@ -91,7 +93,7 @@ sourceFileListing.withReader { reader ->
             File newFileParent = new File(targetFolderPath, pathAfterCutoffWithoutFilename)
             File newFile = new File(newFileParent, sourceFile.getName())
             newFileParent.mkdirs()
-            if (newFile.getName().endsWith(".pdf")) {
+            if (newFile.getName() =~ /${pdfPattern}/) {
                 Files.copy(samplePdfFile.toPath(), newFile.toPath())
             } else if ("done".equals(newFile.getName())) {
                 Files.copy(sampleDoneFile.toPath(), newFile.toPath())
