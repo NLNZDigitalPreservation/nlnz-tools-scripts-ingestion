@@ -170,13 +170,13 @@ sourceFileListingPath="/path/to/source-files"
 targetFolder="/path/to/destination"
 # the file structure after the cutoff is recreated in the destination folder
 sourceFileFilenameCutoff="/LD/Fairfax/"
-# PDF files have a filename suffix of '.pdf'
-samplePdfFilePath="/path/to/sample-pdf-file"
+# PDF files have a filename suffix of '\.[pP]{1}[dD]{1}[fF]{1}'
+samplePdfFilePath="resources/sample.pdf"
 # The mets file has a filename of 'mets.xml'
-sampleMetsFilePath="/path/to/sample/mets.xml"
+sampleMetsFilePath="resources/mets.xml"
 # The done file has a filename of 'done'
-sampleDoneFilePath="/path/to/sample/done"
-sampleOtherFilePath="/path/to/any-other-file-substitute"
+sampleDoneFilePath="resources/done"
+sampleOtherFilePath="resources/other-file.txt"
 
 ${scriptLocation}/recreate-files-with-structure.groovy \
     "${sourceFileListingPath}" \
