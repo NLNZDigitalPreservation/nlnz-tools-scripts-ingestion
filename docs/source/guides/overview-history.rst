@@ -27,6 +27,8 @@ Following this introduction, this Overview and History Guide includes the follow
 
 -   **Release history** - Covers significant changes made in each release.
 
+-   **Copyright** - Covers the code copyright.
+
 
 Overview
 ========

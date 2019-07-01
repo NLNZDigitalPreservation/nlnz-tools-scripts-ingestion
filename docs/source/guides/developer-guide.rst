@@ -44,6 +44,10 @@ Major contributors to NLNZ Tools Scripts Ingestion are NLNZ (The National Librar
 (https://natlib.govt.nz/). This institution currently drive most development. All contributors are welcome. Making your
 interest in NLNZ Tools Scripts Ingestion known can help to ensure that the tools meets your needs.
 
+Contributors
+------------
+See individual git commits to see who contributors are.
+
 
 Tests
 =====
