@@ -210,12 +210,12 @@ Example usage
     # the file structure after the cutoff is recreated in the destination folder
     sourceFileFilenameCutoff="/LD/Fairfax/"
     # PDF files have a filename suffix of '\.[pP]{1}[dD]{1}[fF]{1}'
-    samplePdfFilePath="resources/sample.pdf"
+    samplePdfFilePath="${scriptLocation}/resources/sample.pdf"
     # The mets file has a filename of 'mets.xml'
-    sampleMetsFilePath="resources/mets.xml"
+    sampleMetsFilePath="${scriptLocation}/resources/mets.xml"
     # The done file has a filename of 'done'
-    sampleDoneFilePath="resources/done"
-    sampleOtherFilePath="resources/other-file.txt"
+    sampleDoneFilePath="${scriptLocation}/resources/done"
+    sampleOtherFilePath="${scriptLocation}/resources/other-file.txt"
 
     ${scriptLocation}/recreate-files-with-structure.groovy \
         "${sourceFileListingPath}" \
@@ -327,6 +327,36 @@ Usage
                                --file_name_portion_replacement FILE_NAME_PORTION_REPLACEMENT \
                                [--verbose] [--debug] \
                                [--test]
+
+bulk-file-replace.groovy
+------------------------
+Replaces a set of files that match a given regex with a replacement file. Use of this script may require editing of the
+groovy file. Currently the script was used to bulk replace test PDF files with the same hash, but different names.
+
+Arguments
+~~~~~~~~~
+::
+
+    targetFolder the target folder containing the files that will be matched.
+                 Note that all the files in the target folder will be checked
+                 (i.e. subdirectories will be searched as well).
+    replacementFile the file to replace the matched file with. The replacement file will be copied
+                    over the matching file.
+
+Edited values
+~~~~~~~~~~~~~
+These are values that require editing in the groovy script itself.
+
+regexPattern - the pattern used to match the target file
+
+expectedMd5Hash - the MD5 hash of the target file.
+
+Usage example
+~~~~~~~~~~~~~
+::
+
+utilities/bulk-file-replace.groovy /path/to/target/folder utilities/resources/minimal-jhove-acceptable.pdf
+
 
 Running requirements
 ====================

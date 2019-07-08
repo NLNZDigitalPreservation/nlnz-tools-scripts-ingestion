@@ -148,7 +148,7 @@ def parse_parameters():
                         help='The target folder for unrecognized files')
     parser.add_argument('--starting_date', type=convert_string_to_date, default=datetime.date(2014, 1, 1),
                         help='The starting-date, format is yyyyMMdd')
-    parser.add_argument('--ending_date', type=convert_string_to_date, default=datetime.date(2019, 06, 30),
+    parser.add_argument('--ending_date', type=convert_string_to_date, default=datetime.date(2019, 6, 30),
                         help='The ending date, format is yyyyMMdd')
     parser.add_argument('--do_pre_processing', dest='do_pre_processing', action='store_true',
                         help="Do pre-processing. The source folder is unprocessed files " +
